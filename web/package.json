@@ -11,7 +11,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "build:standalone": "npm run build && node scripts/standalone.mjs",
-    "pages": "npm run build && node scripts/standalone.mjs ../index.html"
+    "pages": "npm run build && node scripts/standalone.mjs ../index.html",
+    "package": "npm run pages && node scripts/package.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

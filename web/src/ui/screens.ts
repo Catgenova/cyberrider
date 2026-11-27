@@ -47,6 +47,52 @@ export class Screens {
     this.root.classList.remove('show');
   }
 
+  /**
+   * In-game dialog. Browser alert/confirm/prompt are unavailable inside sandboxed game portals, so
+   * notices, confirmations and copyable codes render in the page. Resolves true on confirm.
+   */
+  dialog(opts: { title: string; text: string; code?: string; confirmLabel?: string; cancelLabel?: string | null }): Promise<boolean> {
+    let host = document.getElementById('modal');
+    if (!host) {
+      host = el('div', { id: 'modal' });
+      (this.root.parentElement ?? document.body).append(host);
+    }
+    const modal = host;
+    return new Promise((resolve) => {
+      const finish = (ok: boolean) => {
+        document.removeEventListener('keydown', onKey, true);
+        clear(modal);
+        modal.classList.remove('show');
+        resolve(ok);
+      };
+      const onKey = (ev: KeyboardEvent) => {
+        if (ev.key === 'Escape') {
+          ev.preventDefault();
+          ev.stopPropagation();
+          finish(false);
+        } else if (ev.key === 'Enter' && !(ev.target instanceof HTMLTextAreaElement)) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          finish(true);
+        }
+      };
+      document.addEventListener('keydown', onKey, true);
+      let code: HTMLTextAreaElement | null = null;
+      if (opts.code !== undefined) {
+        code = el('textarea', { class: 'code' });
+        code.value = opts.code;
+        code.readOnly = true;
+        code.addEventListener('focus', () => code?.select());
+      }
+      const ok = el('button', { class: 'btn primary', text: opts.confirmLabel ?? 'OK', onClick: () => finish(true) });
+      const buttons = [opts.cancelLabel === null ? null : el('button', { class: 'btn', text: opts.cancelLabel ?? 'cancel', onClick: () => finish(false) }), ok];
+      clear(modal);
+      modal.append(this.panel('narrow dialog', [el('h2', { text: opts.title }), el('p', { text: opts.text }), code, el('div', { class: 'row end' }, buttons)]));
+      modal.classList.add('show');
+      (code ?? ok).focus();
+    });
+  }
+
   private mount(name: ScreenName, ...nodes: HTMLElement[]): void {
     this.current = name;
     clear(this.root);
@@ -92,10 +138,11 @@ export class Screens {
             class: 'btn ghost',
             text: 'reset progress',
             onClick: () => {
-              if (confirm('Erase all campaign progress, records and ghosts?')) {
+              void this.dialog({ title: 'RESET PROGRESS', text: 'Erase all campaign progress, records, ghosts and lifetime stats?', confirmLabel: 'ERASE', cancelLabel: 'keep' }).then((ok) => {
+                if (!ok) return;
                 g.progress.reset();
                 this.title();
-              }
+              });
             },
           }),
         ]),
@@ -565,7 +612,7 @@ export class Screens {
             onClick: () => {
               const decoded = decodeShareCode(importBox.value);
               if (!decoded) {
-                alert('That code did not decode. Codes start with CYR1.');
+                void this.dialog({ title: 'IMPORT FAILED', text: 'That code did not decode. Codes start with CYR1.', cancelLabel: null });
                 return;
               }
               const env = ENVIRONMENTS[decoded.environment] ?? ENVIRONMENTS.mountain;
@@ -603,15 +650,17 @@ export class Screens {
               const code = encodeShareCode(t);
               g.progress.bump('codesShared');
               g.progress.save();
+              let copied = false;
               try {
                 await navigator.clipboard.writeText(code);
-                alert('Share code copied to the clipboard.');
+                copied = true;
               } catch {
-                prompt('Copy this share code:', code);
+                copied = false;
               }
+              void this.dialog({ title: 'SHARE CODE', text: copied ? 'Copied to the clipboard. The Import box reads it back on any device.' : 'Copy the code below; the Import box reads it back on any device.', code, cancelLabel: null });
             },
           }),
-          t.builtin ? null : el('button', { class: 'btn small ghost', text: 'DELETE', onClick: () => { if (confirm(`Delete "${t.title}"?`)) { g.store.remove(t.id); refresh(); } } }),
+          t.builtin ? null : el('button', { class: 'btn small ghost', text: 'DELETE', onClick: () => { void this.dialog({ title: 'DELETE TRACK', text: `Delete "${t.title}" from this browser?`, confirmLabel: 'DELETE', cancelLabel: 'keep' }).then((ok) => { if (ok) { g.store.remove(t.id); refresh(); } }); } }),
         ]),
       ]),
     ]).tap((card) => {
@@ -660,8 +709,8 @@ export class Screens {
               });
               g.progress.bump('tracksPublished');
               g.progress.save();
-              alert(`Published "${pub.title}". Share code copied? Use the library card to copy it.`);
               this.library('mine');
+              void this.dialog({ title: 'PUBLISHED', text: `"${pub.title}" is in your library. Use its SHARE CODE button to pass it to other players.`, cancelLabel: null });
             },
           }),
         ]),

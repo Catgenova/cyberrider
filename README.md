@@ -24,11 +24,23 @@ npm test                  # physics behaviour tests + a sweep over every campaig
 npm run build             # static bundle in dist/
 npm run build:standalone  # regenerate cyber-rider.html from dist/
 npm run pages             # the same, plus the root index.html that GitHub Pages publishes
+npm run package           # the same, plus cyber-rider-web.zip for uploading to a game portal
 ```
 
 The site is GitHub Pages serving the `index.html` at the root of `main`. After changing the game,
 run `npm run pages` and commit the root `index.html`; the site updates a minute after the push.
 The root `.nojekyll` keeps GitHub from post-processing the file.
+
+### Publishing on a game portal
+
+`npm run package` rebuilds everything and writes `web/cyber-rider-web.zip`: a zip with a single
+`index.html` at its root, which is the upload format most HTML5 portals accept. The same file works
+as a hosted URL in an iframe (the GitHub Pages address above). The game is portal-friendly out of
+the box: it never calls `alert`, `confirm` or `prompt` (in-page dialogs instead, so sandboxed
+iframes work), storage failures fall back to memory, audio starts on the first tap, Space and the
+arrow keys are captured so the host page does not scroll, and the layout fits any size including
+phones in landscape. The only external request is the Google Fonts stylesheet; the UI falls back
+to system fonts when it is blocked.
 
 Stack: TypeScript, Vite, Canvas 2D (additive glow strokes), plain DOM for the HUD and menus,
 Vitest for tests. There are no runtime dependencies.

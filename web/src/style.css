@@ -294,3 +294,10 @@ button, .btn, .big-btn, .chip, .map-node, .env-card, .rider-card, .level-card, .
 .stats-table td { padding: 4px 8px; border-bottom: 1px solid rgba(57, 246, 255, 0.1); }
 .stats-table td.v { text-align: right; font-family: var(--font-head); font-size: 12px; color: #fff; white-space: nowrap; }
 .stats-intro { font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+
+/* ---------------------------------------------------------------- in-game dialogs */
+#modal { position: absolute; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(3, 1, 10, 0.55); }
+#modal.show { display: flex; }
+#modal .panel.dialog { width: min(480px, 100%); }
+#modal .panel.dialog p { margin: 6px 0 12px; }
+#modal .code { min-height: 84px; }
