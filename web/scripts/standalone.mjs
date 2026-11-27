@@ -21,6 +21,12 @@ html = html
   .replace(/<link rel="stylesheet"[^>]*href="\.\/assets\/[^"]*"[^>]*>/, () => `<style>\n${style}\n</style>`);
 
 if (html.includes('./assets/')) throw new Error('An asset reference was not inlined.');
+
+// Deployed copies carry the installable-app links; the manifest and icons live at the repository root.
+html = html.replace(
+  '</title>',
+  '</title>\n    <link rel="manifest" href="./manifest.webmanifest" />\n    <link rel="apple-touch-icon" href="./site/apple-touch-icon.png" />',
+);
 const outputs = [join(process.cwd(), 'cyber-rider.html'), ...process.argv.slice(2).map((p) => join(process.cwd(), p))];
 for (const out of outputs) {
   writeFileSync(out, html);

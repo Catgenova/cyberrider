@@ -34,6 +34,11 @@ function frame(now: number): void {
 }
 requestAnimationFrame(frame);
 
+// Deployed copies install as an app and keep working offline. Dev builds and file:// copies skip it.
+if (import.meta.env.PROD && 'serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('./sw.js').catch(() => undefined);
+}
+
 // Expose for debugging in the console.
 (window as unknown as { game: Game; ui: { screens: Screens; hud: Hud } }).game = game;
 (window as unknown as { game: Game; ui: { screens: Screens; hud: Hud } }).ui = { screens, hud };
